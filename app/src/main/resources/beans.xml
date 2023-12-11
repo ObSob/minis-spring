@@ -1,9 +1,9 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <beans>
-    <bean id="bbs" class="com.minis.test.BaseBaseService">
+    <bean id="helloService" class="org.minispring.service.HelloServiceImpl">
         <property type="com.minis.test.AServiceImpl" name="helloService"/>
     </bean>
-<!--    <com id="aservice" class="org.minispring.app.service.HelloService">-->
+<!--    <com id="aservice" class="org.minispring.service.HelloService">-->
 <!--        <constructor-arg type="String" name="name" value="abc"/>-->
 <!--        <constructor-arg type="int" name="level" value="3"/>-->
 <!--        <property type="String" name="property1" value="Someone says"/>-->

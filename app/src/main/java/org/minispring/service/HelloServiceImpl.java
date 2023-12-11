@@ -1,4 +1,4 @@
-package org.minispring.app.service;
+package org.minispring.service;
 
 //@Bean
 public class HelloServiceImpl implements HelloService {

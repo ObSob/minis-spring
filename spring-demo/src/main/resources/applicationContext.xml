@@ -4,6 +4,6 @@
        http://www.springframework.org/schema/beans/spring-beans.xsd">
 
     <!-- 声明 HelloService Bean -->
-    <bean id="helloService" class="com.demo.service.HelloService"/>
+    <bean id="helloService" class="org.minispring.service.HelloService"/>
 
 </beans>
