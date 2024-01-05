@@ -1,4 +1,4 @@
-package org.minispring.core.bean.config.factory;
+package org.minispring.core.bean.factory;
 
 public interface BeanFactory {
 

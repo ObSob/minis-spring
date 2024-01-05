@@ -1,12 +1,14 @@
-package org.minispring.core.bean.config.context;
+package org.minispring.core.bean.factory.config.context;
 
+import lombok.Setter;
 import org.jdom2.Document;
 import org.jdom2.Element;
 import org.jdom2.input.SAXBuilder;
-import org.minispring.core.bean.config.BeanDefinition;
-import org.minispring.core.bean.config.DefaultBeanDefinition;
-import org.minispring.core.bean.config.factory.BeanFactory;
+import org.minispring.core.bean.exception.BeansException;
+import org.minispring.core.bean.factory.config.BeanDefinition;
+import org.minispring.core.bean.factory.BeanFactory;
 
+import javax.annotation.Nullable;
 import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -15,7 +17,10 @@ import java.util.Map;
 
 public class ClassPathXmlApplicationContext implements ApplicationContext, BeanFactory {
 
+    private final List<String> configLocations = new ArrayList<>();
+
     private final List<BeanDefinition> beanDefinitions = new ArrayList<>();
+
     private final Map<String, Object> singletons = new HashMap<>();
 
     public ClassPathXmlApplicationContext(String configLocation) {
@@ -23,6 +28,22 @@ public class ClassPathXmlApplicationContext implements ApplicationContext, BeanF
         loadBeanDefinitions(configLocation);
         // Instantiate and initialize beans
         instantiateBeans();
+    }
+
+    public ClassPathXmlApplicationContext(
+            String[] configLocations, boolean refresh, @Nullable ApplicationContext parent)
+            throws BeansException {
+
+//        super(parent);
+        setConfigLocations(configLocations);
+        if (refresh) {
+            refresh();
+        }
+    }
+
+    private void refresh() {
+        // TODO: Implement refresh logic here
+
     }
 
     private void instantiateBeans() {
@@ -33,12 +54,12 @@ public class ClassPathXmlApplicationContext implements ApplicationContext, BeanF
             } catch (ClassNotFoundException | InstantiationException | IllegalAccessException e) {
                 throw new RuntimeException(e);
             }
-            singletons.put(beanDefinition.getBeanClassName(), bean);
+            singletons.put(beanDefinition.getClassName(), bean);
         }
     }
 
     private Object createBean(BeanDefinition beanDefinition) throws ClassNotFoundException, InstantiationException, IllegalAccessException {
-        Class<?> clazz = Class.forName("org.minispring.service.HelloServiceImpl");
+        Class<?> clazz = Class.forName(beanDefinition.getClassName());
         return clazz.newInstance();
     }
 
@@ -63,7 +84,7 @@ public class ClassPathXmlApplicationContext implements ApplicationContext, BeanF
                     System.out.println("Property Type : " + type);
                     System.out.println("Property Name : " + name);
                 }
-                beanDefinitions.add(new DefaultBeanDefinition(className));
+                beanDefinitions.add(new BeanDefinition(id, className));
             }
         } catch (Exception ignore) {
             ignore.printStackTrace();
@@ -83,5 +104,9 @@ public class ClassPathXmlApplicationContext implements ApplicationContext, BeanF
     @Override
     public String getApplicationName() {
         return "";
+    }
+
+    private void setConfigLocations(String[] configLocations) {
+        this.configLocations.addAll(List.of(configLocations));
     }
 }

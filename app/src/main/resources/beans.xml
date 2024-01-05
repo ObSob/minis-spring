@@ -1,17 +1,24 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <beans>
     <bean id="helloService" class="org.minispring.app.service.HelloServiceImpl">
-        <property type="com.minis.test.AServiceImpl" name="helloService"/>
+        <property type="org.minispring.app.dao" name="dao"/>
+        <constructor-arg type="int" name="id" value="3"/>
+        <constructor-arg type="String" name="name" value="abc"/>
+
     </bean>
-<!--    <com id="aservice" class="org.minispring.app.service.HelloService">-->
-<!--        <constructor-arg type="String" name="name" value="abc"/>-->
-<!--        <constructor-arg type="int" name="level" value="3"/>-->
-<!--        <property type="String" name="property1" value="Someone says"/>-->
-<!--        <property type="String" name="property2" value="Hello World!"/>-->
-<!--        <property type="com.minis.test.BaseService" name="ref1" ref="baseservice"/>-->
-<!--    </com>-->
-<!--&lt;!&ndash;    <com id="baseservice" class="com.minis.test.BaseService" init-method="init">&ndash;&gt;-->
-<!--    </com>-->
+    <!--    <com id="aservice" class="org.minispring.app.service.HelloService">-->
+    <!--        <constructor-arg type="String" name="name" value="abc"/>-->
+    <!--        <constructor-arg type="int" name="level" value="3"/>-->
+    <!--        <property type="String" name="property1" value="Someone says"/>-->
+    <!--        <property type="String" name="property2" value="Hello World!"/>-->
+    <!--        <property type="com.minis.test.BaseService" name="ref1" ref="baseservice"/>-->
+    <!--    </com>-->
+    <!--&lt;!&ndash;    <com id="baseservice" class="com.minis.test.BaseService" init-method="init">&ndash;&gt;-->
+    <!--    </com>-->
+
+    <bean id="userDao" class="org.minispring.app.dao.UserDaoImpl">
+
+    </bean>
 
 
 </beans>
