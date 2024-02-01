@@ -11,5 +11,9 @@ public class Main {
         HelloService service = (HelloServiceImpl) context.getBean(HelloServiceImpl.class.getName());
 //        ((HelloServiceImpl) (context.getBean("helloService"))).greet("wbh");
         service.greet("wbh");
+        System.out.println("xxx");
+        System.out.println("as");
+        "a123214256325"
     }
+    
 }
