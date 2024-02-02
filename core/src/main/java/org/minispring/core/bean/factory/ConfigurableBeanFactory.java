@@ -5,14 +5,13 @@ import org.minispring.core.bean.factory.config.SingletonBeanRegistry;
 
 public interface ConfigurableBeanFactory extends BeanFactory, SingletonBeanRegistry {
 
-    void setParentBeanFactory(BeanFactory parentBeanFactory);
-
+//    void setParentBeanFactory(BeanFactory parentBeanFactory);
 
     void addBeanPostProcessor(BeanPostProcessor beanPostProcessor);
 
     int getBeanPostProcessorCount();
 
-    void setBeanClassLoader(ClassLoader beanClassLoader);
+//    void setBeanClassLoader(ClassLoader beanClassLoader);
 
     void registerDependentBean(String beanName, String dependentBeanName);
 
@@ -20,5 +19,5 @@ public interface ConfigurableBeanFactory extends BeanFactory, SingletonBeanRegis
 
     String[] getDependenciesForBean(String beanName);
 
-    ClassLoader getBeanClassLoader();
+//    ClassLoader getBeanClassLoader();
 }

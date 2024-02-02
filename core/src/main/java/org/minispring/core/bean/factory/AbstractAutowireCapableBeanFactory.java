@@ -27,6 +27,21 @@ public abstract class AbstractAutowireCapableBeanFactory extends AbstractBeanFac
         for (BeanPostProcessor beanPostProcessor : this.beanPostProcessors) {
             beanPostProcessor.setBeanFactory(this);
             result = beanPostProcessor.postProcessBeforeInitialization(result, beanName);
+            if (result == null) {
+                return result;
+            }
+        }
+        return result;
+    }
+
+    public Object applyBeanPostProcessorsAfterInitialization(Object existingBean, String beanName) {
+        Object result = existingBean;
+        for (BeanPostProcessor beanPostProcessor : this.beanPostProcessors) {
+            beanPostProcessor.setBeanFactory(this);
+            result = beanPostProcessor.postProcessAfterInitialization(result, beanName);
+            if (result == null) {
+                return result;
+            }
         }
         return result;
     }
