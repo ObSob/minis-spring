@@ -2,7 +2,6 @@ package org.minispring.core.bean.factory.support;
 
 import lombok.NoArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.checkerframework.checker.units.qual.C;
 import org.minispring.core.bean.exception.BeansException;
 import org.minispring.core.bean.factory.ConfigurableBeanFactory;
 import org.minispring.core.bean.factory.config.*;
@@ -104,9 +103,13 @@ public abstract class AbstractBeanFactory extends DefaultSingletonBeanRegistry i
                          IllegalAccessException e) {
                     e.printStackTrace();
                 }
+            } else {
+                obj = clz.newInstance();
             }
         } catch (ClassNotFoundException e) {
             e.printStackTrace();
+        } catch (InstantiationException | IllegalAccessException e) {
+            throw new RuntimeException(e);
         }
         log.info(bd.getId() + " bean created. " + bd.getClassName() + " : " + obj.toString());
         return obj;
@@ -188,4 +191,50 @@ public abstract class AbstractBeanFactory extends DefaultSingletonBeanRegistry i
     public void registerBean(String beanName, Object singleton) {
         this.registerSingleton(beanName, singleton);
     }
+
+    @Override
+    public BeanDefinition getBeanDefinition(String name) {
+        return this.beanDefinitionMap.get(name);
+    }
+
+    @Override
+    public void registerBeanDefinition(String name, BeanDefinition bd) {
+        this.beanDefinitionMap.put(name, bd);
+        this.beanDefinitionNames.add(name);
+        if (!bd.isLazyInit()) {
+            Object bean = createBean(bd);
+            registerBean(name, bean);
+        }
+    }
+
+    @Override
+    public void removeBeanDefinition(String name) {
+        this.beanDefinitionMap.remove(name);
+        this.beanDefinitionNames.remove(name);
+        this.removeSingleton(name);
+    }
+
+    @Override
+    public boolean containsBeanDefinition(String name) {
+        return this.beanDefinitionMap.containsKey(name);
+    }
+
+    @Override
+    public boolean isSingleton(String name) {
+        return this.beanDefinitionMap.get(name).isSingleton();
+    }
+
+    @Override
+    public boolean isPrototype(String name) {
+        return this.beanDefinitionMap.get(name).isPrototype();
+    }
+
+    @Override
+    public Class<?> getType(String name) {
+        return this.beanDefinitionMap.get(name).getClass();
+    }
+
+    abstract public Object applyBeanPostProcessorsBeforeInitialization(Object existingBean, String beanName) throws BeansException;
+
+    abstract public Object applyBeanPostProcessorsAfterInitialization(Object existingBean, String beanName) throws BeansException;
 }

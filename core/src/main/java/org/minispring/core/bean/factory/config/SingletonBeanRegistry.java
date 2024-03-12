@@ -8,5 +8,7 @@ public interface SingletonBeanRegistry {
 
     boolean containsSingleton(String beanName);
 
-    Object getSingletonMutex();
+    String[] getSingletonNames();
+
+//    Object getSingletonMutex();
 }

@@ -10,5 +10,5 @@ public interface BeanDefinitionRegistry {
 
     BeanDefinition getBeanDefinition(String name);
 
-    boolean containsBeansDefinition(String name);
+    boolean containsBeanDefinition(String name);
 }

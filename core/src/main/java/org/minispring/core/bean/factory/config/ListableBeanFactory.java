@@ -1,5 +1,6 @@
 package org.minispring.core.bean.factory.config;
 
+import org.minispring.core.bean.exception.BeansException;
 import org.minispring.core.bean.factory.BeanFactory;
 
 import java.util.Map;
@@ -14,5 +15,5 @@ public interface ListableBeanFactory extends BeanFactory {
 
     String[] getBeanNamesForType(Class<?> type);
 
-    <T> Map<String, T> getBeansOfType(Class<T> type) throws Exception;
+    <T> Map<String, T> getBeansOfType(Class<T> type) throws BeansException;
 }

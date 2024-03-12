@@ -1,12 +1,14 @@
 package org.minispring.core.bean.factory.config.context;
 
-import lombok.Setter;
 import org.jdom2.Document;
 import org.jdom2.Element;
 import org.jdom2.input.SAXBuilder;
+import org.minispring.core.bean.annotation.AutowiredAnnotationBeanPostProcessor;
 import org.minispring.core.bean.exception.BeansException;
 import org.minispring.core.bean.factory.config.BeanDefinition;
-import org.minispring.core.bean.factory.BeanFactory;
+import org.minispring.core.bean.factory.config.ConfigurableListableFactory;
+import org.minispring.core.bean.factory.config.DefaultListableBeanFactory;
+import org.minispring.core.bean.factory.support.AbstractBeanFactory;
 
 import javax.annotation.Nullable;
 import java.io.InputStream;
@@ -15,7 +17,8 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-public class ClassPathXmlApplicationContext implements ApplicationContext, BeanFactory {
+public class ClassPathXmlApplicationContext extends AbstractApplicationContext {
+    AbstractBeanFactory beanFactory = new DefaultListableBeanFactory();
 
     private final List<String> configLocations = new ArrayList<>();
 
@@ -24,26 +27,51 @@ public class ClassPathXmlApplicationContext implements ApplicationContext, BeanF
     private final Map<String, Object> singletons = new HashMap<>();
 
     public ClassPathXmlApplicationContext(String configLocation) {
-        // Load bean definitions from XML file
-        loadBeanDefinitions(configLocation);
-        // Instantiate and initialize beans
-        instantiateBeans();
+        this(configLocation, true);
     }
 
-    public ClassPathXmlApplicationContext(
-            String[] configLocations, boolean refresh, @Nullable ApplicationContext parent)
+    public ClassPathXmlApplicationContext(String configLocation, boolean refresh)
             throws BeansException {
+        setConfigLocations(new String[]{configLocation});
+        loadBeanDefinitions(configLocation);
 
 //        super(parent);
-        setConfigLocations(configLocations);
         if (refresh) {
             refresh();
         }
     }
 
-    private void refresh() {
-        // TODO: Implement refresh logic here
 
+    @Override
+    void registerListeners() {
+        ApplicationListener listener = new ApplicationListener();
+        this.getApplicationEventPublisher().addApplicationListener(listener);
+    }
+
+    @Override
+    void initApplicationEventPublisher() {
+        ApplicationEventPublisher aep = new SimpleApplicationEventPublisher();
+        this.setApplicationEventPublisher(aep);
+    }
+
+    @Override
+    void postProcessBeanFactory(ConfigurableListableFactory bf) {
+
+    }
+
+    @Override
+    void registerBeanPostProcessors(ConfigurableListableFactory bf) {
+        this.beanFactory.addBeanPostProcessor(new AutowiredAnnotationBeanPostProcessor());
+    }
+
+    @Override
+    void onRefresh() {
+        this.beanFactory.refresh();
+    }
+
+    @Override
+    void finishRefresh() {
+        publishEvent(new ContextRefreshEvent("Context Refreshed..."));
     }
 
     private void instantiateBeans() {
@@ -84,7 +112,7 @@ public class ClassPathXmlApplicationContext implements ApplicationContext, BeanF
                     System.out.println("Property Type : " + type);
                     System.out.println("Property Name : " + name);
                 }
-                beanDefinitions.add(new BeanDefinition(id, className));
+                this.beanFactory.registerBeanDefinition(className, new BeanDefinition(id, className));
             }
         } catch (Exception ignore) {
             ignore.printStackTrace();
@@ -93,7 +121,7 @@ public class ClassPathXmlApplicationContext implements ApplicationContext, BeanF
 
     @Override
     public Object getBean(String name) {
-        return singletons.get(name);
+        return beanFactory.getBean(name);
     }
 
     @Override
@@ -106,7 +134,22 @@ public class ClassPathXmlApplicationContext implements ApplicationContext, BeanF
         return "";
     }
 
+    @Override
+    public ConfigurableListableFactory getBeanFactory() throws IllegalStateException {
+        return (ConfigurableListableFactory) this.beanFactory;
+    }
+
     private void setConfigLocations(String[] configLocations) {
         this.configLocations.addAll(List.of(configLocations));
+    }
+
+    @Override
+    public void publishEvent(ApplicationEvent event) {
+        this.getApplicationEventPublisher().publishEvent(event);
+    }
+
+    @Override
+    public void addApplicationListener(ApplicationListener listener) {
+        this.getApplicationEventPublisher().addApplicationListener(listener);
     }
 }

@@ -9,12 +9,9 @@ public class HelloServiceImpl implements HelloService {
     @Autowired
     private UserDao userDao;
 
-    @A
-
     @Override
     public void greet(String userName) {
 //        userDao.saveUser(userName);
         System.out.println("hello " + userName);
-        S
     }
 }
