@@ -112,7 +112,7 @@ public class ClassPathXmlApplicationContext extends AbstractApplicationContext {
                     System.out.println("Property Type : " + type);
                     System.out.println("Property Name : " + name);
                 }
-                this.beanFactory.registerBeanDefinition(className, new BeanDefinition(id, className));
+                this.beanFactory.registerBeanDefinition(id, new BeanDefinition(id, className));
             }
         } catch (Exception ignore) {
             ignore.printStackTrace();

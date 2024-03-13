@@ -8,7 +8,7 @@ import org.minispring.app.service.HelloServiceImpl;
 public class Main {
     public static void main(String[] args) {
         ApplicationContext context = new ClassPathXmlApplicationContext("beans.xml");
-        HelloService service = (HelloServiceImpl) context.getBean(HelloServiceImpl.class.getName());
+        HelloService service = (HelloServiceImpl) context.getBean("helloService");
         service.greet("wbh");
 
     }
