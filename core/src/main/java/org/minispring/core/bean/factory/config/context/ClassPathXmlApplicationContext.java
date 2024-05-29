@@ -1,22 +1,24 @@
 package org.minispring.core.bean.factory.config.context;
 
+import lombok.extern.slf4j.Slf4j;
 import org.jdom2.Document;
 import org.jdom2.Element;
 import org.jdom2.input.SAXBuilder;
 import org.minispring.core.bean.annotation.AutowiredAnnotationBeanPostProcessor;
 import org.minispring.core.bean.exception.BeansException;
 import org.minispring.core.bean.factory.config.BeanDefinition;
-import org.minispring.core.bean.factory.config.ConfigurableListableFactory;
+import org.minispring.core.bean.factory.config.ConfigurableListableBeanFactory;
+import org.minispring.core.bean.factory.config.ConstructorArgumentValues;
 import org.minispring.core.bean.factory.config.DefaultListableBeanFactory;
 import org.minispring.core.bean.factory.support.AbstractBeanFactory;
 
-import javax.annotation.Nullable;
 import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+@Slf4j
 public class ClassPathXmlApplicationContext extends AbstractApplicationContext {
     AbstractBeanFactory beanFactory = new DefaultListableBeanFactory();
 
@@ -41,36 +43,35 @@ public class ClassPathXmlApplicationContext extends AbstractApplicationContext {
         }
     }
 
-
     @Override
-    void registerListeners() {
+    public void registerListeners() {
         ApplicationListener listener = new ApplicationListener();
         this.getApplicationEventPublisher().addApplicationListener(listener);
     }
 
     @Override
-    void initApplicationEventPublisher() {
+    public void initApplicationEventPublisher() {
         ApplicationEventPublisher aep = new SimpleApplicationEventPublisher();
         this.setApplicationEventPublisher(aep);
     }
 
     @Override
-    void postProcessBeanFactory(ConfigurableListableFactory bf) {
+    public void postProcessBeanFactory(ConfigurableListableBeanFactory bf) {
 
     }
 
     @Override
-    void registerBeanPostProcessors(ConfigurableListableFactory bf) {
+    public void registerBeanPostProcessors(ConfigurableListableBeanFactory bf) {
         this.beanFactory.addBeanPostProcessor(new AutowiredAnnotationBeanPostProcessor());
     }
 
     @Override
-    void onRefresh() {
+    public void onRefresh() {
         this.beanFactory.refresh();
     }
 
     @Override
-    void finishRefresh() {
+    public void finishRefresh() {
         publishEvent(new ContextRefreshEvent("Context Refreshed..."));
     }
 
@@ -102,17 +103,22 @@ public class ClassPathXmlApplicationContext extends AbstractApplicationContext {
             for (Element bean : beanList) {
                 String id = bean.getAttributeValue("id");
                 String className = bean.getAttributeValue("class");
-                System.out.println("Bean ID : " + id);
-                System.out.println("Bean Class : " + className);
-
+                log.info("Bean ID : " + id);
+                log.info("Bean Class : " + className);
+                BeanDefinition beanDefinition = new BeanDefinition(id, className);
                 List<Element> propertyList = bean.getChildren("property");
+                ConstructorArgumentValues avs = new ConstructorArgumentValues();
                 for (Element property : propertyList) {
                     String type = property.getAttributeValue("type");
                     String name = property.getAttributeValue("name");
-                    System.out.println("Property Type : " + type);
-                    System.out.println("Property Name : " + name);
+                    String value = property.getAttributeValue("value");
+                    log.info("Property Type : " + type);
+                    log.info("Property Name : " + name);
+                    log.info("Property Value : " + value);
+                    avs.addArgumentValue(type, name, value);
                 }
-                this.beanFactory.registerBeanDefinition(id, new BeanDefinition(id, className));
+                beanDefinition.setConstructorArgumentValues(avs);
+                this.beanFactory.registerBeanDefinition(id, beanDefinition);
             }
         } catch (Exception ignore) {
             ignore.printStackTrace();
@@ -135,8 +141,8 @@ public class ClassPathXmlApplicationContext extends AbstractApplicationContext {
     }
 
     @Override
-    public ConfigurableListableFactory getBeanFactory() throws IllegalStateException {
-        return (ConfigurableListableFactory) this.beanFactory;
+    public ConfigurableListableBeanFactory getBeanFactory() throws IllegalStateException {
+        return (ConfigurableListableBeanFactory) this.beanFactory;
     }
 
     private void setConfigLocations(String[] configLocations) {

@@ -1,12 +1,14 @@
 package org.minispring.core.bean.annotation;
 
 import lombok.Getter;
+import lombok.extern.slf4j.Slf4j;
 import org.minispring.core.bean.factory.BeanFactory;
 import org.minispring.core.bean.factory.config.BeanPostProcessor;
 
 import java.lang.reflect.Field;
 
 @Getter
+@Slf4j
 public class AutowiredAnnotationBeanPostProcessor implements BeanPostProcessor {
     private BeanFactory beanFactory;
 
@@ -22,7 +24,7 @@ public class AutowiredAnnotationBeanPostProcessor implements BeanPostProcessor {
                 try {
                     field.setAccessible(true);
                     field.set(bean, autowiredObj);
-                    System.out.println("autowire " + fieldName + " for bean " + beanName);
+                    log.info("autowire {} for bean {}", fieldName, beanName);
                 } catch (IllegalAccessException e) {
                     e.printStackTrace();
                 }

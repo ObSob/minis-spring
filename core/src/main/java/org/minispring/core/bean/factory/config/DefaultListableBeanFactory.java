@@ -1,14 +1,15 @@
 package org.minispring.core.bean.factory.config;
 
+import org.minispring.core.bean.exception.BeansException;
 import org.minispring.core.bean.factory.AbstractAutowireCapableBeanFactory;
-import org.minispring.core.bean.factory.BeanFactory;
 
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
-public class DefaultListableBeanFactory extends AbstractAutowireCapableBeanFactory implements ConfigurableListableFactory {
+public class DefaultListableBeanFactory extends AbstractAutowireCapableBeanFactory implements ConfigurableListableBeanFactory {
+    private ConfigurableListableBeanFactory parentBeanFactory;
 
     @Override
     public int getBeanDefinitionCount() {
@@ -46,6 +47,20 @@ public class DefaultListableBeanFactory extends AbstractAutowireCapableBeanFacto
             Object beanInstance = getBean(beanName);
             result.put(beanName, (T) beanInstance);
         }
+        return result;
+    }
+
+    public void setParent(ConfigurableListableBeanFactory beanFactory) {
+        this.parentBeanFactory = beanFactory;
+    }
+
+    @Override
+    public Object getBean(String beanName) throws BeansException {
+        Object result = super.getBean(beanName);
+        if (result == null) {
+            result = this.parentBeanFactory.getBean(beanName);
+        }
+
         return result;
     }
 }

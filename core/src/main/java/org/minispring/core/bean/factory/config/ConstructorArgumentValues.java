@@ -19,14 +19,22 @@ public class ConstructorArgumentValues {
 
     private final List<ValueHolder> genericArgumentValues = new ArrayList<>();
 
-    public void addGenericArgumentValue(Object value, String type) {
-        addGenericArgumentValue(new ValueHolder(value, type));
+    public void addArgumentValue(String type, String name, Object value) {
+        addGenericArgumentValue(new ValueHolder(type, name, value));
+    }
+
+    public void addGenericArgumentValue(String type, String name, Object value) {
+        addGenericArgumentValue(new ValueHolder(type, name, value));
     }
 
     public void addGenericArgumentValue(@NonNull ValueHolder newValue) {
-        if(!this.genericArgumentValues.contains(newValue)) {
+        if (!this.genericArgumentValues.contains(newValue)) {
             this.genericArgumentValues.add(newValue);
         }
+    }
+
+    public ValueHolder getGenericArgumentValue(int index) {
+        return genericArgumentValues.get(index);
     }
 
     public boolean isEmpty() {
@@ -64,10 +72,10 @@ public class ConstructorArgumentValues {
         private boolean converted = false;
         private Object convertedValue;
 
-        public ValueHolder(Object value, String type, String name) {
-            this.value = value;
+        public ValueHolder(String type, String name, Object value) {
             this.type = type;
             this.name = name;
+            this.value = value;
         }
 
         public ValueHolder(Object value, String type) {

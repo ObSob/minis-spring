@@ -5,8 +5,6 @@ import org.minispring.core.bean.factory.config.SingletonBeanRegistry;
 
 public interface ConfigurableBeanFactory extends BeanFactory, SingletonBeanRegistry {
 
-//    void setParentBeanFactory(BeanFactory parentBeanFactory);
-
     void addBeanPostProcessor(BeanPostProcessor beanPostProcessor);
 
     int getBeanPostProcessorCount();

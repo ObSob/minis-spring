@@ -4,7 +4,7 @@ import lombok.Getter;
 import lombok.Setter;
 import org.minispring.core.bean.exception.BeansException;
 import org.minispring.core.bean.factory.config.BeanPostProcessor;
-import org.minispring.core.bean.factory.config.ConfigurableListableFactory;
+import org.minispring.core.bean.factory.config.ConfigurableListableBeanFactory;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -17,6 +17,11 @@ public abstract class AbstractApplicationContext implements ApplicationContext {
     @Getter
     @Setter
     private ApplicationEventPublisher applicationEventPublisher;
+
+    @Override
+    public Object getBean(String beanName) throws BeansException {
+        return getBeanFactory().getBean(beanName);
+    }
 
     @Override
     public boolean isSingleton(String name) {
@@ -42,17 +47,17 @@ public abstract class AbstractApplicationContext implements ApplicationContext {
         finishRefresh();
     }
 
-    abstract void registerListeners();
+    public abstract void registerListeners();
 
-    abstract void initApplicationEventPublisher();
+    public abstract void initApplicationEventPublisher();
 
-    abstract void postProcessBeanFactory(ConfigurableListableFactory bf);
+    public abstract void postProcessBeanFactory(ConfigurableListableBeanFactory bf);
 
-    abstract void registerBeanPostProcessors(ConfigurableListableFactory bf);
+    public abstract void registerBeanPostProcessors(ConfigurableListableBeanFactory bf);
 
-    abstract void onRefresh();
+    public abstract void onRefresh();
 
-    abstract void finishRefresh();
+    public abstract void finishRefresh();
 
     @Override
     public void registerSingleton(String beanName, Object singletonObject) {
@@ -131,7 +136,7 @@ public abstract class AbstractApplicationContext implements ApplicationContext {
     }
 
     @Override
-    public abstract ConfigurableListableFactory getBeanFactory() throws IllegalStateException;
+    public abstract ConfigurableListableBeanFactory getBeanFactory() throws IllegalStateException;
 
 
     @Override

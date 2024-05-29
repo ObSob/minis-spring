@@ -3,6 +3,7 @@ package org.minispring.core.bean.factory.support;
 import lombok.NoArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.minispring.core.bean.exception.BeansException;
+import org.minispring.core.bean.factory.BeanFactory;
 import org.minispring.core.bean.factory.ConfigurableBeanFactory;
 import org.minispring.core.bean.factory.config.*;
 
@@ -22,6 +23,7 @@ public abstract class AbstractBeanFactory extends DefaultSingletonBeanRegistry i
 
     private final Map<String, Object> earlySingletonObjects = new HashMap<String, Object>(16);
 
+    private BeanFactory parent;
 
     public void refresh() {
         for (String beanName : beanDefinitionMap.keySet()) {
@@ -41,6 +43,9 @@ public abstract class AbstractBeanFactory extends DefaultSingletonBeanRegistry i
             if (singleton == null) {
                 log.info("get bean {} null", beanName);
                 BeanDefinition bd = beanDefinitionMap.get(beanName);
+                if (bd == null) {
+                    return singleton;
+                }
                 singleton = createBean(bd);
                 registerBean(beanName, singleton);
             }
@@ -80,14 +85,23 @@ public abstract class AbstractBeanFactory extends DefaultSingletonBeanRegistry i
                 Class<?>[] paramTypes = new Class<?>[argumentValues.getArgumentCount()];
                 Object[] paramValues = new Object[argumentValues.getArgumentCount()];
                 for (int i = 0; i < argumentValues.getArgumentCount(); i++) {
-                    ConstructorArgumentValues.ValueHolder argumentValue = argumentValues.getIndexedArgumentValue(i);
+                    ConstructorArgumentValues.ValueHolder argumentValue = argumentValues.getGenericArgumentValue(i);
+                    String name = argumentValue.getName();
+                    // 自定义的对象
+                    if (beanDefinitionMap.containsKey(name)) {
+                        paramTypes[i] = Class.forName(beanDefinitionMap.get(name).getClassName());
+                        paramValues[i] = getBean(argumentValue.getName());
+                        continue;
+                    }
                     String type = argumentValue.getType();
                     if (String.class.getSimpleName().equals(type)
                             || String.class.getName().equals(type)) {
                         paramTypes[i] = String.class;
+                        paramValues[i] = argumentValue.getValue();
                     } else if (Integer.class.getSimpleName().equals(type)
                             || Integer.class.getName().equals(type)) {
                         paramTypes[i] = Integer.class;
+                        paramValues[i] = Integer.valueOf((String) argumentValue.getValue());
                     } else if ("int".equals(argumentValue.getType())) {
                         paramTypes[i] = int.class;
                         paramValues[i] = Integer.valueOf((String) argumentValue.getValue());
@@ -97,21 +111,35 @@ public abstract class AbstractBeanFactory extends DefaultSingletonBeanRegistry i
                     }
                 }
                 try {
-                    con = clz.getConstructor(paramTypes);
-                    obj = con.newInstance(paramValues);
-                } catch (InvocationTargetException | NoSuchMethodException | InstantiationException |
-                         IllegalAccessException e) {
+                    for (Constructor<?> c : clz.getConstructors()) {
+                        if (c.getParameters().length != paramTypes.length) {
+                            continue;
+                        }
+                        boolean match = true;
+                        for (int i = 0; i < paramTypes.length; i++) {
+                            if (!(c.getParameters()[i].getType().isAssignableFrom(paramTypes[i]))) {
+                                match = false;
+                                break;
+                            }
+                            if (i == paramTypes.length - 1) {
+                                con = c;
+                            }
+                        }
+                        if (!match) {
+                            throw new RuntimeException("未找到符合符合条件的构造函数 " + Arrays.toString(paramTypes));
+                        }
+                        obj = con.newInstance(paramValues);
+                    }
+                } catch (Exception e) {
                     e.printStackTrace();
                 }
             } else {
                 obj = clz.newInstance();
             }
-        } catch (ClassNotFoundException e) {
+        } catch (Exception e) {
             e.printStackTrace();
-        } catch (InstantiationException | IllegalAccessException e) {
-            throw new RuntimeException(e);
         }
-        log.info(bd.getId() + " bean created. " + bd.getClassName() + " : " + obj.toString());
+        log.info("{} bean created. {} : {}", bd.getId(), bd.getClassName(), obj.toString());
         return obj;
     }
 
@@ -121,48 +149,44 @@ public abstract class AbstractBeanFactory extends DefaultSingletonBeanRegistry i
 
     private void handleProperties(BeanDefinition bd, Class<?> clz, Object obj) {
         //handle properties
-        System.out.println("handle properties for bean : " + bd.getId());
+        log.info("handle properties for bean : {}", bd.getId());
         PropertyValues propertyValues = bd.getPropertyValues();
         if (!propertyValues.isEmpty()) {
-            for (int i=0; i<propertyValues.size(); i++) {
+            for (int i = 0; i < propertyValues.size(); i++) {
                 PropertyValue propertyValue = propertyValues.getPropertyValueList().get(i);
                 String pName = propertyValue.getName();
                 String pType = propertyValue.getType();
                 Object pValue = propertyValue.getValue();
                 boolean isRef = propertyValue.isRef();
                 Class<?>[] paramTypes = new Class<?>[1];
-                Object[] paramValues =   new Object[1];
+                Object[] paramValues = new Object[1];
                 if (!isRef) {
                     if ("String".equals(pType) || "java.lang.String".equals(pType)) {
                         paramTypes[0] = String.class;
-                    }
-                    else if ("Integer".equals(pType) || "java.lang.Integer".equals(pType)) {
+                    } else if ("Integer".equals(pType) || "java.lang.Integer".equals(pType)) {
                         paramTypes[0] = Integer.class;
-                    }
-                    else if ("int".equals(pType)) {
+                    } else if ("int".equals(pType)) {
                         paramTypes[0] = int.class;
-                    }
-                    else {
+                    } else {
                         paramTypes[0] = String.class;
                     }
 
                     paramValues[0] = pValue;
-                }
-                else { //is ref, create the dependent beans
+                } else { //is ref, create the dependent beans
                     try {
                         paramTypes[0] = Class.forName(pType);
                     } catch (ClassNotFoundException e) {
                         e.printStackTrace();
                     }
                     try {
-                        paramValues[0] = getBean((String)pValue);
+                        paramValues[0] = getBean((String) pValue);
 
                     } catch (BeansException e) {
                         e.printStackTrace();
                     }
                 }
 
-                String methodName = "set" + pName.substring(0,1).toUpperCase() + pName.substring(1);
+                String methodName = "set" + pName.substring(0, 1).toUpperCase() + pName.substring(1);
 
                 Method method = null;
                 try {
@@ -234,7 +258,9 @@ public abstract class AbstractBeanFactory extends DefaultSingletonBeanRegistry i
         return this.beanDefinitionMap.get(name).getClass();
     }
 
-    abstract public Object applyBeanPostProcessorsBeforeInitialization(Object existingBean, String beanName) throws BeansException;
+    abstract public Object applyBeanPostProcessorsBeforeInitialization(Object existingBean, String beanName) throws
+            BeansException;
 
-    abstract public Object applyBeanPostProcessorsAfterInitialization(Object existingBean, String beanName) throws BeansException;
+    abstract public Object applyBeanPostProcessorsAfterInitialization(Object existingBean, String beanName) throws
+            BeansException;
 }
