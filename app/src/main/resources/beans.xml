@@ -1,11 +1,11 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <beans>
-<!--    <bean id="helloService" class="org.minispring.app.service.HelloServiceImpl">-->
-<!--        <property type="org.minispring.app.dao" name="dao"/>-->
-<!--        <constructor-arg type="int" name="id" value="3"/>-->
-<!--        <constructor-arg type="String" name="name" value="abc"/>-->
+    <!--    <bean id="helloService" class="org.minispring.app.service.HelloServiceImpl">-->
+    <!--        <property type="org.minispring.app.dao" name="dao"/>-->
+    <!--        <constructor-arg type="int" name="id" value="3"/>-->
+    <!--        <constructor-arg type="String" name="name" value="abc"/>-->
 
-<!--    </bean>-->
+    <!--    </bean>-->
     <!--    <com id="aservice" class="org.minispring.app.service.HelloService">-->
     <!--        <constructor-arg type="String" name="name" value="abc"/>-->
     <!--        <constructor-arg type="int" name="level" value="3"/>-->
@@ -20,11 +20,13 @@
 
     </bean>
 
+    <!--    mvc   -->
     <bean id="webBindingInitializer" class="org.minispring.web.DateInitializer"/>
 
     <bean id="handlerAdapter" class="org.minispring.core.web.RequestMappingHandlerAdapter">
         <property type="org.minispring.core.web.HttpMessageConverter" name="messageConverter" ref="messageConverter"/>
-        <property type="org.minispring.core.web.WebBindingInitializer" name="webBindingInitializer" ref="webBindingInitializer"/>
+        <property type="org.minispring.core.web.WebBindingInitializer" name="webBindingInitializer"
+                  ref="webBindingInitializer"/>
     </bean>
     <bean id="objectMapper" class="org.minispring.core.web.DefaultObjectMapper">
         <property type="String" name="dateFormat" value="yyyy/MM/dd"/>
@@ -34,10 +36,24 @@
         <property type="org.minispring.core.web.ObjectMapper" name="objectMapper" ref="objectMapper"/>
     </bean>
 
-    <bean id="viewResolver" class="org.minispring.core.web.InternalResourceViewResolver" >
-        <property type="String" name="viewClassName" value="com.minis.web.servlet.view.JstlView" />
-        <property type="String" name="prefix" value="/jsp/" />
-        <property type="String" name="suffix" value=".jsp" />
+    <bean id="viewResolver" class="org.minispring.core.web.InternalResourceViewResolver">
+        <property type="String" name="viewClassName" value="com.minis.web.servlet.view.JstlView"/>
+        <property type="String" name="prefix" value="/jsp/"/>
+        <property type="String" name="suffix" value=".jsp"/>
+    </bean>
+
+    <!--   jdbc    -->
+    <bean id="dataSource" class="org.minispring.core.jdbc.SingleConnectionDataSource">
+        <property type="String" name="url" value="jdbc:mysql://localhost:3306/minispring?useSSL=false&amp;allowPublicKeyRetrieval=true&amp;serverTimezone=Asia/Shanghai"/>
+        <property type="String" name="username" value="root"/>
+        <property type="String" name="password" value="123456"/>
+    </bean>
+    <bean id="jdbcTemplate" class="org.minispring.jdbc.UserJdbcImpl" >
+        <property type="org.minispring.core.jdbc.SingleConnectionDataSource" name="dataSource" ref="dataSource"/>
+    </bean>
+
+    <bean id="sqlSessionFactory" class="org.minispring.core.jdbc.DefaultSqlSessionFactory" init-method="init">
+        <property type="String" name="mapperLocations" value="mapper"/>
     </bean>
 
 </beans>

@@ -131,6 +131,7 @@ public abstract class AbstractBeanFactory extends DefaultSingletonBeanRegistry i
                         obj = con.newInstance(paramValues);
                     }
                 } catch (Exception e) {
+                    e.getCause().printStackTrace();
                     e.printStackTrace();
                 }
             } else {
