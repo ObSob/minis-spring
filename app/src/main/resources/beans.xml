@@ -44,16 +44,39 @@
 
     <!--   jdbc    -->
     <bean id="dataSource" class="org.minispring.core.jdbc.SingleConnectionDataSource">
-        <property type="String" name="url" value="jdbc:mysql://localhost:3306/minispring?useSSL=false&amp;allowPublicKeyRetrieval=true&amp;serverTimezone=Asia/Shanghai"/>
+        <property type="String" name="url"
+                  value="jdbc:mysql://localhost:3306/minispring?useSSL=false&amp;allowPublicKeyRetrieval=true&amp;serverTimezone=Asia/Shanghai"/>
         <property type="String" name="username" value="root"/>
         <property type="String" name="password" value="123456"/>
     </bean>
-    <bean id="jdbcTemplate" class="org.minispring.jdbc.UserJdbcImpl" >
+    <bean id="jdbcTemplate" class="org.minispring.jdbc.UserJdbcImpl">
         <property type="org.minispring.core.jdbc.SingleConnectionDataSource" name="dataSource" ref="dataSource"/>
     </bean>
 
     <bean id="sqlSessionFactory" class="org.minispring.core.jdbc.DefaultSqlSessionFactory" init-method="init">
         <property type="String" name="mapperLocations" value="mapper"/>
     </bean>
+
+    <!--    aop    -->
+    <bean id="realAction" class="org.minispring.aop.RealAction"/>
+    <bean id="myInterceptor" class="org.minispring.aop.TracingInterceptor"/>
+    <bean id="beforeAdvice" class="org.minispring.aop.MyBeforeAdvice"/>
+    <bean id="advisor" class="org.minispring.core.aop.NameMatchMethodPointcutAdvisor">
+        <property type="org.minispring.core.aop.Advice" name="beforeAdvice" ref="beforeAdvice"/>
+        <property type="String" name="mappedName" value="exec*"/>
+    </bean>
+
+    <bean id="action" class="org.minispring.core.aop.ProxyFactoryBean">
+        <property type="java.lang.object" name="realAction" ref="realAction"/>
+        <property type="String" name="interceptorName" value="advisor"/>
+    </bean>
+
+    <bean id="autoProxyCreator" class="org.minispring.core.aop.BeanNameAutoProxyCreator">
+        <property type="String" name="pattern" value="*Action"/>
+        <property type="String" name="interceptorName" value="advisor"/>
+    </bean>
+
+    <bean id="autoProxyAction" class="org.minispring.aop.AutoProxyAction"/>
+
 
 </beans>

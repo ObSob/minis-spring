@@ -2,8 +2,11 @@ package org.minispring.core.bean.factory.support;
 
 import lombok.NoArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.minispring.core.aop.FactoryBean;
+import org.minispring.core.aop.FactoryBeanRegistrySupport;
 import org.minispring.core.bean.exception.BeansException;
 import org.minispring.core.bean.factory.BeanFactory;
+import org.minispring.core.bean.factory.BeanFactoryAware;
 import org.minispring.core.bean.factory.ConfigurableBeanFactory;
 import org.minispring.core.bean.factory.config.*;
 
@@ -15,7 +18,7 @@ import java.util.concurrent.ConcurrentHashMap;
 
 @Slf4j
 @NoArgsConstructor
-public abstract class AbstractBeanFactory extends DefaultSingletonBeanRegistry implements ConfigurableBeanFactory, BeanDefinitionRegistry {
+public abstract class AbstractBeanFactory extends FactoryBeanRegistrySupport implements ConfigurableBeanFactory, BeanDefinitionRegistry {
 
     protected Map<String, BeanDefinition> beanDefinitionMap = new ConcurrentHashMap<>();
 
@@ -43,14 +46,63 @@ public abstract class AbstractBeanFactory extends DefaultSingletonBeanRegistry i
             if (singleton == null) {
                 log.info("get bean {} null", beanName);
                 BeanDefinition bd = beanDefinitionMap.get(beanName);
-                if (bd == null) {
-                    return singleton;
+                if (bd != null) {
+                    singleton = createBean(bd);
+                    this.registerBean(beanName, singleton);
+                    if (singleton instanceof BeanFactoryAware) {
+                        ((BeanFactoryAware) singleton).setBeanFactory(this);
+                    }
+
+                    // step 1 : postProcessBeforeInitialization
+                    singleton = applyBeanPostProcessorsBeforeInitialization(singleton, beanName);
+                    //step 2 : init-method
+                    if (bd.getInitMethodName() != null && !bd.getInitMethodName().isEmpty()) {
+                        invokeInitMethod(bd, singleton);
+                    }
+                    //step 3 : postProcessAfterInitialization
+                    applyBeanPostProcessorsAfterInitialization(singleton, beanName);
+                    this.removeSingleton(beanName);
+                    this.registerBean(beanName, singleton);
                 }
-                singleton = createBean(bd);
-                registerBean(beanName, singleton);
+            } else {
+                return singleton;
             }
         }
+
+        //处理 factoryBean
+        if (singleton instanceof FactoryBean) {
+            return this.getObjectForBeanInstance(singleton, beanName);
+        }
+
         return singleton;
+    }
+
+    protected Object getObjectForBeanInstance(Object beanInstance, String beanName) {
+        // Now we have the bean instance, which may be a normal bean or a FactoryBean.
+        if (!(beanInstance instanceof FactoryBean)) {
+            return beanInstance;
+        }
+
+        Object object = null;
+        FactoryBean<?> factory = (FactoryBean<?>) beanInstance;
+        object = getObjectFromFactoryBean(factory, beanName);
+        return object;
+    }
+
+    private void invokeInitMethod(BeanDefinition bd, Object obj) {
+        Class<?> clz = obj.getClass();
+        Method method = null;
+        try {
+            method = clz.getMethod(bd.getInitMethodName());
+        } catch (NoSuchMethodException | SecurityException e) {
+            e.printStackTrace();
+        }
+        try {
+            assert method != null;
+            method.invoke(obj);
+        } catch (IllegalAccessException | IllegalArgumentException | InvocationTargetException e) {
+            e.printStackTrace();
+        }
     }
 
     private Object createBean(BeanDefinition bd) {
@@ -87,26 +139,22 @@ public abstract class AbstractBeanFactory extends DefaultSingletonBeanRegistry i
                 for (int i = 0; i < argumentValues.getArgumentCount(); i++) {
                     ConstructorArgumentValues.ValueHolder argumentValue = argumentValues.getGenericArgumentValue(i);
                     String name = argumentValue.getName();
-                    // 自定义的对象
-                    if (beanDefinitionMap.containsKey(name)) {
-                        paramTypes[i] = Class.forName(beanDefinitionMap.get(name).getClassName());
-                        paramValues[i] = getBean(argumentValue.getName());
-                        continue;
-                    }
+
                     String type = argumentValue.getType();
-                    if (String.class.getSimpleName().equals(type)
-                            || String.class.getName().equals(type)) {
+                    if (String.class.getSimpleName().equals(type) || String.class.getName().equals(type)) {
                         paramTypes[i] = String.class;
                         paramValues[i] = argumentValue.getValue();
-                    } else if (Integer.class.getSimpleName().equals(type)
-                            || Integer.class.getName().equals(type)) {
+                    } else if (Integer.class.getSimpleName().equals(type) || Integer.class.getName().equals(type)) {
                         paramTypes[i] = Integer.class;
                         paramValues[i] = Integer.valueOf((String) argumentValue.getValue());
                     } else if ("int".equals(argumentValue.getType())) {
                         paramTypes[i] = int.class;
                         paramValues[i] = Integer.valueOf((String) argumentValue.getValue());
+                    } else if (beanDefinitionMap.containsKey(name)) {
+                        paramTypes[i] = Class.forName(beanDefinitionMap.get(name).getClassName());
+                        paramValues[i] = getBean(argumentValue.getName());
                     } else {
-                        paramTypes[i] = String.class;
+                        paramTypes[i] = Object.class;
                         paramValues[i] = argumentValue.getValue();
                     }
                 }
@@ -126,12 +174,11 @@ public abstract class AbstractBeanFactory extends DefaultSingletonBeanRegistry i
                             }
                         }
                         if (!match) {
-                            throw new RuntimeException("未找到符合符合条件的构造函数 " + Arrays.toString(paramTypes));
+                            throw new RuntimeException("未找到符合符合条件的构造函数 " + clz.getName() + Arrays.toString(paramTypes));
                         }
                         obj = con.newInstance(paramValues);
                     }
                 } catch (Exception e) {
-                    e.getCause().printStackTrace();
                     e.printStackTrace();
                 }
             } else {
@@ -259,9 +306,7 @@ public abstract class AbstractBeanFactory extends DefaultSingletonBeanRegistry i
         return this.beanDefinitionMap.get(name).getClass();
     }
 
-    abstract public Object applyBeanPostProcessorsBeforeInitialization(Object existingBean, String beanName) throws
-            BeansException;
+    abstract public Object applyBeanPostProcessorsBeforeInitialization(Object existingBean, String beanName) throws BeansException;
 
-    abstract public Object applyBeanPostProcessorsAfterInitialization(Object existingBean, String beanName) throws
-            BeansException;
+    abstract public Object applyBeanPostProcessorsAfterInitialization(Object existingBean, String beanName) throws BeansException;
 }

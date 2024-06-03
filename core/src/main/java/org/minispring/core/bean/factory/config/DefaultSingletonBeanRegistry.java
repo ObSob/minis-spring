@@ -28,6 +28,9 @@ public class DefaultSingletonBeanRegistry implements SingletonBeanRegistry {
 
     @Override
     public Object getSingleton(String beanName) {
+        if(beanName == null) {
+            return null;
+        }
         return this.singletonObjects.get(beanName);
     }
 

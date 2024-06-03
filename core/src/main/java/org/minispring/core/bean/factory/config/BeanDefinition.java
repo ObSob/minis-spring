@@ -23,6 +23,7 @@ public class BeanDefinition {
     private String id;
     private String className;
     private String scope = SCOPE_SINGLETON;
+    private String initMethodName;
 
     public BeanDefinition(String id, String className) {
         this.id = id;
